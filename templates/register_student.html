@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Student</title>
+<link rel="stylesheet" href="/static/css/theme.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-content">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span class="brand-mark-text">SC</span></div>
+        <div class="brand-meta">
+          <p class="brand-kicker">Campus</p>
+          <p class="brand-name">Smart Campus Tracker</p>
+        </div>
+      </div><p class="eyebrow eyebrow-light">Admissions Desk</p>
+      <h1 class="sidebar-page-title">Student Registration</h1>
+      <p class="sidebar-text">Create a cleaner, more credible intake experience for campus residents joining the RFID movement system.</p>
+
+      <nav class="nav-list">
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/register_student_page" class="nav-link active">
+          <span>Register Student</span>
+          <span class="badge badge-copper">Form</span>
+        </a>
+        <a href="/register_visitor_page" class="nav-link">Register Visitor</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="form-shell">
+    <section class="panel form-panel">
+      <div>
+        <p class="eyebrow eyebrow-muted">Form Panel</p>
+        <h3 class="section-title">Register Student</h3>
+      </div>
+
+      <div class="form-group">
+        <label for="name" class="label">Student Name</label>
+        <input id="name" placeholder="Enter full student name" class="input input-sand input-copper">
+      </div>
+
+      <div class="form-group">
+        <label for="register" class="label">Register Number</label>
+        <input id="register" placeholder="Enter register number" class="input input-ink">
+      </div>
+
+      <div class="form-group">
+        <label for="rfid" class="label">RFID Tag</label>
+        <input id="rfid" placeholder="Optional RFID tag identifier" class="input input-mint input-pine">
+      </div>
+
+      <div class="form-group">
+        <button onclick="registerStudent()" class="btn btn-dark full-width">Register Student</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>
+
+
+

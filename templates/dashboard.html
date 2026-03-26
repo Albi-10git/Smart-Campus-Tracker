@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/css/theme.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-content">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span class="brand-mark-text">SC</span></div>
+        <div class="brand-meta">
+          <p class="brand-kicker">Campus</p>
+          <p class="brand-name">Smart Campus Tracker</p>
+        </div>
+      </div><p class="eyebrow eyebrow-light">Operations Suite</p>
+      <h2 class="brand-title">Smart Campus Tracker</h2>
+      <p class="sidebar-text">Live movement awareness for gates, academic blocks, and visitor checkpoints.</p>
+
+      <nav class="nav-list">
+        <a href="/dashboard" class="nav-link active">
+          <span>Dashboard</span>
+          <span class="badge badge-copper">Live</span>
+        </a>
+        <a href="/register_student_page" class="nav-link">Register Student</a>
+        <a href="/register_visitor_page" class="nav-link">Register Visitor</a>
+        <a href="/logout" class="nav-link">Logout</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="content">
+    <section class="panel panel-soft hero-panel">
+      <div class="hero-row">
+        <div class="hero-copy">
+          <p class="eyebrow eyebrow-copper">Movement Intelligence</p>
+          <h1 class="page-title">Movement Dashboard</h1>
+          <p class="lead">A clearer control-room view for student and visitor movement across campus checkpoints, with calmer tones and stronger visual structure.</p>
+        </div>
+
+        <div class="actions">
+          <button onclick="loadLogs()" class="btn btn-dark">Load Logs</button>
+          <button onclick="clearLogs()" class="btn btn-primary">Clear Records</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel records-panel">
+      <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8">
+        <div class="flex flex-col gap-2 mb-6">
+          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Scanner Control</p>
+          <h2 class="text-2xl font-semibold text-slate-900">RFID Scanner Simulator</h2>
+          <p class="text-sm text-slate-600">Simulate realistic checkpoint scans by entering a tag and selecting the campus location.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div class="flex flex-col gap-2">
+            <label for="scanner-rfid-tag" class="text-sm font-medium text-slate-700">RFID Tag</label>
+            <input
+              id="scanner-rfid-tag"
+              type="text"
+              placeholder="Enter RFID tag"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+            >
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label for="scanner-location" class="text-sm font-medium text-slate-700">Location</label>
+            <select
+              id="scanner-location"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+            >
+              <option value="Main Gate">Main Gate</option>
+              <option value="Classroom A">Classroom A</option>
+              <option value="Classroom B">Classroom B</option>
+              <option value="Lab">Lab</option>
+              <option value="Library">Library</option>
+              <option value="Office">Office</option>
+              <option value="Custom">Custom Location</option>
+            </select>
+          </div>
+
+          <div id="custom-location-wrap" class="hidden flex-col gap-2">
+            <label for="custom-location" class="text-sm font-medium text-slate-700">Custom Location</label>
+            <input
+              id="custom-location"
+              type="text"
+              placeholder="Enter your own location"
+              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+            >
+          </div>
+
+          <button
+            onclick="scanRfid()"
+            class="w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg"
+          >
+            Scan RFID
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel records-panel">
+      <div class="records-row records-intro">
+        <div>
+          <p class="eyebrow eyebrow-muted">Live Records</p>
+          <h2 class="section-title">Recent Campus Movement</h2>
+        </div>
+        <p class="helper-text">Student and visitor logs appear here after you load records.</p>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Register No</th>
+                <th>Location</th>
+                <th>Time In</th>
+                <th>Time Out</th>
+              </tr>
+            </thead>
+            <tbody id="logs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div
+  id="clear-logs-modal"
+  class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-4"
+>
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+    <div class="flex flex-col gap-3">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Confirmation</p>
+      <h3 class="text-2xl font-semibold text-slate-900">Clear Recent Campus Movement?</h3>
+      <p class="text-sm text-slate-600">This will remove all currently stored movement records from the dashboard log.</p>
+    </div>
+
+    <div class="mt-6 flex justify-end gap-3">
+      <button
+        type="button"
+        onclick="closeClearLogsModal()"
+        class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        onclick="confirmClearLogs()"
+        class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-800"
+      >
+        Clear Records
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>
+
+
+

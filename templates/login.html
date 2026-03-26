@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Tracker Login</title>
+<link rel="stylesheet" href="/static/css/theme.css">
+</head>
+<body>
+<div class="app-shell auth-shell">
+  <aside class="sidebar">
+    <div class="sidebar-content">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span class="brand-mark-text">SC</span></div>
+        <div class="brand-meta">
+          <p class="brand-kicker">Campus</p>
+          <p class="brand-name">Smart Campus Tracker</p>
+        </div>
+      </div><p class="eyebrow eyebrow-light">Operations Suite</p>
+      <h1 class="brand-title">Smart Campus Tracker</h1>
+      <p class="sidebar-text">Secure access for movement records, student registration, and visitor monitoring in one campus control system.</p>
+    </div>
+  </aside>
+
+  <main class="form-shell">
+    <section class="panel form-panel">
+      <div class="auth-panel-head">
+        <div>
+          <p class="eyebrow eyebrow-copper">Secure Access</p>
+          <h2 class="section-title">Campus Portal</h2>
+          <p class="lead">Sign in to access the dashboard, or create a new operator account directly from this page.</p>
+        </div>
+
+        <div class="auth-toggle" role="tablist" aria-label="Authentication forms">
+          <button
+            type="button"
+            class="auth-toggle-btn {% if active_form != 'register' %}active{% endif %}"
+            onclick="showAuthPanel('login')"
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            class="auth-toggle-btn {% if active_form == 'register' %}active{% endif %}"
+            onclick="showAuthPanel('register')"
+          >
+            Register
+          </button>
+        </div>
+      </div>
+
+      {% if message %}
+      <div class="auth-feedback auth-feedback-{{ message_type or 'info' }}">{{ message }}</div>
+      {% endif %}
+
+      <div class="auth-grid">
+        <form
+          action="/login"
+          method="POST"
+          id="login-panel"
+          class="auth-card {% if active_form == 'register' %}auth-card-hidden{% endif %}"
+        >
+          <p class="auth-card-title">Welcome back</p>
+          <p class="helper-text">Use your existing account to manage students, visitors, and movement logs.</p>
+
+          <div class="form-group">
+            <label for="username" class="label">Username</label>
+            <input
+              id="username"
+              name="username"
+              placeholder="Enter your username"
+              class="input input-sand input-copper"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="password" class="label">Password</label>
+            <div class="password-wrap">
+              <input
+                type="password"
+                name="password"
+                id="password"
+                placeholder="Enter your password"
+                class="input input-ink"
+              >
+              <button type="button" onclick="togglePassword('password', this)" class="password-toggle">Show</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <button class="btn btn-dark full-width">Login</button>
+          </div>
+        </form>
+
+        <form
+          action="/register_user"
+          method="POST"
+          id="register-panel"
+          class="auth-card auth-card-accent {% if active_form != 'register' %}auth-card-hidden{% endif %}"
+        >
+          <p class="auth-card-title">Create account</p>
+          <p class="helper-text">Add a new operator account for the campus tracker team.</p>
+
+          <div class="form-group">
+            <label for="register-username" class="label">Username</label>
+            <input
+              id="register-username"
+              name="username"
+              placeholder="Choose a username"
+              class="input input-sand input-copper"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="register-password" class="label">Password</label>
+            <div class="password-wrap">
+              <input
+                type="password"
+                name="password"
+                id="register-password"
+                placeholder="Create a password"
+                class="input input-ink"
+              >
+              <button type="button" onclick="togglePassword('register-password', this)" class="password-toggle">Show</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password" class="label">Confirm Password</label>
+            <div class="password-wrap">
+              <input
+                type="password"
+                name="confirm_password"
+                id="confirm-password"
+                placeholder="Repeat the password"
+                class="input input-ink"
+              >
+              <button type="button" onclick="togglePassword('confirm-password', this)" class="password-toggle">Show</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <button class="btn btn-primary full-width">Register User</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+function togglePassword(inputId, trigger){
+  const input = document.getElementById(inputId)
+
+  if (input.type === "password") {
+    input.type = "text"
+    trigger.textContent = "Hide"
+  } else {
+    input.type = "password"
+    trigger.textContent = "Show"
+  }
+}
+
+function showAuthPanel(panel){
+  const loginPanel = document.getElementById("login-panel")
+  const registerPanel = document.getElementById("register-panel")
+  const toggleButtons = document.querySelectorAll(".auth-toggle-btn")
+
+  loginPanel.classList.toggle("auth-card-hidden", panel !== "login")
+  registerPanel.classList.toggle("auth-card-hidden", panel !== "register")
+
+  toggleButtons.forEach((button) => {
+    button.classList.toggle("active", button.textContent.trim().toLowerCase() === panel)
+  })
+}
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Visitor</title>
+<link rel="stylesheet" href="/static/css/theme.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-content">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span class="brand-mark-text">SC</span></div>
+        <div class="brand-meta">
+          <p class="brand-kicker">Campus</p>
+          <p class="brand-name">Smart Campus Tracker</p>
+        </div>
+      </div><p class="eyebrow eyebrow-light">Access Control</p>
+      <h1 class="sidebar-page-title">Visitor Registration</h1>
+      <p class="sidebar-text">Capture guest details in a way that feels closer to a real reception and campus security workflow.</p>
+
+      <nav class="nav-list">
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+        <a href="/register_student_page" class="nav-link">Register Student</a>
+        <a href="/register_visitor_page" class="nav-link active">
+          <span>Register Visitor</span>
+          <span class="badge badge-pine">Guest</span>
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="form-shell">
+    <section class="panel form-panel">
+      <div>
+        <p class="eyebrow eyebrow-muted">Reception Form</p>
+        <h3 class="section-title">Register Visitor</h3>
+      </div>
+
+      <div class="form-group">
+        <label for="vname" class="label">Visitor Name</label>
+        <input id="vname" placeholder="Enter full visitor name" class="input input-sand input-copper">
+      </div>
+
+      <div class="form-group">
+        <label for="phone" class="label">Phone Number</label>
+        <input id="phone" placeholder="Enter contact number" class="input input-ink">
+      </div>
+
+      <div class="form-group">
+        <label for="purpose" class="label">Purpose of Visit</label>
+        <input id="purpose" placeholder="Meeting, delivery, parent visit, vendor access..." class="input input-ink">
+      </div>
+
+      <div class="form-group">
+        <label for="vrfid" class="label">RFID Tag</label>
+        <input id="vrfid" placeholder="Optional temporary RFID tag" class="input input-mint input-pine">
+      </div>
+
+      <div class="form-group">
+        <button onclick="registerVisitor()" class="btn btn-primary full-width">Register Visitor</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/static/js/script.js"></script>
+</body>
+</html>
+
+
+
