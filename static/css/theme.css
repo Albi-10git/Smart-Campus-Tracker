@@ -503,6 +503,13 @@ button, input {
   gap: 18px;
 }
 
+.student-roster-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .student-roster-title {
   margin: 10px 0 0;
   font-size: 40px;
@@ -516,6 +523,22 @@ button, input {
 
 .student-refresh-btn {
   white-space: nowrap;
+}
+
+.student-filter-btn {
+  color: var(--ink);
+  background: rgba(20, 33, 61, 0.08);
+  box-shadow: none;
+}
+
+.student-filter-btn:hover {
+  background: rgba(20, 33, 61, 0.14);
+}
+
+.student-filter-active {
+  color: #fff;
+  background: var(--ink);
+  box-shadow: 0 12px 24px rgba(20, 33, 61, 0.16);
 }
 
 .student-list {
@@ -1091,6 +1114,8 @@ button, input {
     text-shadow: 0 0 8px rgba(255, 231, 196, 0.12);
   }
 }
+
+
 
 
 

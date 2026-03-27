@@ -153,8 +153,13 @@ def register_student():
 def list_students():
 
     student_list = []
+    sort_mode = (request.args.get("sort") or "name").strip().lower()
+    sort_order = [("name", 1)]
 
-    for student in students.find({}, {"name": 1, "register_number": 1, "rfid_tag": 1}).sort("name", 1):
+    if sort_mode == "rfid":
+        sort_order = [("rfid_tag", 1), ("name", 1)]
+
+    for student in students.find({}, {"name": 1, "register_number": 1, "rfid_tag": 1}).sort(sort_order):
         student_list.append(
             {
                 "id": str(student["_id"]),

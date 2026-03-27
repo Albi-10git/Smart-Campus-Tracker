@@ -61,7 +61,7 @@ return
 document.getElementById("name").value=""
 document.getElementById("register").value=""
 document.getElementById("rfid").value=""
-loadStudents()
+loadStudents(currentStudentSort)
 
 })
 
@@ -69,6 +69,7 @@ loadStudents()
 
 
 let pendingStudentDelete = null
+let currentStudentSort = "name"
 
 
 function openStudentDrawer(){
@@ -81,7 +82,7 @@ return
 
 drawer.classList.remove("hidden")
 drawer.classList.add("flex")
-loadStudents()
+loadStudents(currentStudentSort)
 
 }
 
@@ -100,7 +101,30 @@ drawer.classList.remove("flex")
 }
 
 
-function loadStudents(){
+function refreshStudents(){
+
+loadStudents(currentStudentSort)
+
+}
+
+
+function updateStudentSortButtons(){
+
+const nameButton = document.getElementById("student-sort-name")
+const rfidButton = document.getElementById("student-sort-rfid")
+
+if(nameButton){
+nameButton.classList.toggle("student-filter-active", currentStudentSort === "name")
+}
+
+if(rfidButton){
+rfidButton.classList.toggle("student-filter-active", currentStudentSort === "rfid")
+}
+
+}
+
+
+function loadStudents(sortMode=currentStudentSort){
 
 const studentList = document.getElementById("student-list")
 
@@ -108,7 +132,10 @@ if(!studentList){
 return
 }
 
-fetch("/students")
+currentStudentSort = sortMode
+updateStudentSortButtons()
+
+fetch(`/students?sort=${encodeURIComponent(currentStudentSort)}`)
 .then(res=>res.json())
 .then(data=>{
 
@@ -193,7 +220,7 @@ return
 }
 
 closeDeleteStudentModal()
-loadStudents()
+loadStudents(currentStudentSort)
 })
 
 }

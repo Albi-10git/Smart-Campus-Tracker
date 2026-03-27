@@ -62,7 +62,7 @@
 </div>
 
 <button type="button" class="student-drawer-toggle" onclick="openStudentDrawer()">
-  <span class="student-drawer-toggle-icon" aria-hidden="true">≡</span>
+  <span class="student-drawer-toggle-icon" aria-hidden="true">&#9776;</span>
   <span>Manage Students</span>
 </button>
 
@@ -70,7 +70,7 @@
   <div class="student-drawer-backdrop" onclick="closeStudentDrawer()"></div>
   <section class="panel student-roster-panel student-drawer-panel">
     <div class="student-drawer-topbar">
-      <button type="button" class="student-drawer-close" onclick="closeStudentDrawer()" aria-label="Close manage students panel">×</button>
+      <button type="button" class="student-drawer-close" onclick="closeStudentDrawer()" aria-label="Close manage students panel">&times;</button>
     </div>
 
     <div class="student-roster-head">
@@ -78,7 +78,11 @@
         <p class="eyebrow eyebrow-muted">Active Roster</p>
         <h3 class="student-roster-title">Manage Students</h3>
       </div>
-      <button onclick="loadStudents()" class="btn btn-primary student-refresh-btn">Refresh List</button>
+      <div class="student-roster-actions">
+        <button id="student-sort-name" onclick="loadStudents('name')" class="btn btn-secondary student-filter-btn student-filter-active">A-Z</button>
+        <button id="student-sort-rfid" onclick="loadStudents('rfid')" class="btn btn-secondary student-filter-btn">RFID Asc</button>
+        <button onclick="refreshStudents()" class="btn btn-primary student-refresh-btn">Refresh List</button>
+      </div>
     </div>
 
     <p class="helper-text student-panel-copy">Deleting a student removes the student record and frees that RFID so it can be assigned to someone else.</p>
