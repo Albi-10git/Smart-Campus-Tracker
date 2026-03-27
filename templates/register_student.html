@@ -31,11 +31,12 @@
     </div>
   </aside>
 
-  <main class="form-shell">
-    <section class="panel form-panel">
+  <main class="student-page-shell">
+    <section class="panel form-panel student-form-panel">
       <div>
         <p class="eyebrow eyebrow-muted">Form Panel</p>
         <h3 class="section-title">Register Student</h3>
+        <p class="helper-text student-panel-copy">Assign a unique RFID to each student and keep the active roster tidy from the same screen.</p>
       </div>
 
       <div class="form-group">
@@ -58,6 +59,50 @@
       </div>
     </section>
   </main>
+</div>
+
+<button type="button" class="student-drawer-toggle" onclick="openStudentDrawer()">
+  <span class="student-drawer-toggle-icon" aria-hidden="true">≡</span>
+  <span>Manage Students</span>
+</button>
+
+<div id="student-drawer" class="student-drawer-shell hidden">
+  <div class="student-drawer-backdrop" onclick="closeStudentDrawer()"></div>
+  <section class="panel student-roster-panel student-drawer-panel">
+    <div class="student-drawer-topbar">
+      <button type="button" class="student-drawer-close" onclick="closeStudentDrawer()" aria-label="Close manage students panel">×</button>
+    </div>
+
+    <div class="student-roster-head">
+      <div>
+        <p class="eyebrow eyebrow-muted">Active Roster</p>
+        <h3 class="student-roster-title">Manage Students</h3>
+      </div>
+      <button onclick="loadStudents()" class="btn btn-primary student-refresh-btn">Refresh List</button>
+    </div>
+
+    <p class="helper-text student-panel-copy">Deleting a student removes the student record and frees that RFID so it can be assigned to someone else.</p>
+
+    <div id="student-list" class="student-list" aria-live="polite"></div>
+  </section>
+</div>
+
+<div
+  id="delete-student-modal"
+  class="modal-overlay hidden"
+>
+  <div class="modal-card">
+    <div class="modal-copy">
+      <p class="eyebrow eyebrow-muted">Confirmation</p>
+      <h3 class="modal-title">Delete Student?</h3>
+      <p id="delete-student-message" class="helper-text">This action will remove the student record and release the RFID for reassignment.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" onclick="closeDeleteStudentModal()" class="btn btn-secondary">Cancel</button>
+      <button type="button" onclick="confirmDeleteStudent()" class="btn btn-danger">Delete Student</button>
+    </div>
+  </div>
 </div>
 
 <script src="/static/js/script.js"></script>

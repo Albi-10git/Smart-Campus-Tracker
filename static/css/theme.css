@@ -397,10 +397,279 @@ button, input {
   padding: 24px 40px;
 }
 
+.student-page-shell {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 24px 40px;
+}
+
 .form-panel {
   width: 100%;
   max-width: 760px;
   padding: 34px;
+}
+
+.student-form-panel {
+  min-height: calc(100vh - 48px);
+}
+
+.student-roster-panel {
+  padding: 34px;
+  background:
+    radial-gradient(circle at top right, rgba(47, 111, 94, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 243, 236, 0.84));
+}
+
+.student-drawer-toggle {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #17315d 0%, #23455a 100%);
+  color: #fff;
+  box-shadow: 0 20px 40px rgba(20, 33, 61, 0.24);
+}
+
+.student-drawer-toggle:hover {
+  transform: translateY(-2px);
+}
+
+.student-drawer-toggle-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.student-drawer-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.student-drawer-backdrop {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.26);
+  backdrop-filter: blur(4px);
+}
+
+.student-drawer-panel {
+  width: min(100%, 760px);
+  min-height: 100vh;
+  border-radius: 32px 0 0 32px;
+  overflow-y: auto;
+  box-shadow: -28px 0 60px rgba(15, 23, 42, 0.18);
+}
+
+.student-drawer-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.student-drawer-close {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(20, 33, 61, 0.08);
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.student-drawer-close:hover {
+  background: rgba(20, 33, 61, 0.14);
+}
+
+.student-roster-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.student-roster-title {
+  margin: 10px 0 0;
+  font-size: 40px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.student-panel-copy {
+  margin: 14px 0 0;
+}
+
+.student-refresh-btn {
+  white-space: nowrap;
+}
+
+.student-list {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.student-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  border-radius: 24px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 34px rgba(20, 33, 61, 0.08);
+}
+
+.student-card-copy {
+  min-width: 0;
+}
+
+.student-card-topline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.student-card-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #172033;
+}
+
+.student-card-meta {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.student-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(20, 33, 61, 0.08);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.student-empty-state {
+  padding: 36px 28px;
+  border-radius: 24px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background: rgba(255, 255, 255, 0.62);
+  text-align: center;
+}
+
+.student-empty-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.student-delete-btn {
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  color: var(--ink);
+  background: rgba(20, 33, 61, 0.08);
+  box-shadow: none;
+}
+
+.btn-secondary:hover {
+  background: rgba(20, 33, 61, 0.14);
+}
+
+.btn-danger {
+  background: #b42318;
+  box-shadow: 0 12px 28px rgba(180, 35, 24, 0.24);
+}
+
+.btn-danger:hover {
+  background: #991b1b;
+}
+
+.btn-danger-soft {
+  color: #fff;
+  background: linear-gradient(135deg, #c2410c 0%, #b42318 100%);
+  box-shadow: 0 10px 24px rgba(180, 35, 24, 0.2);
+}
+
+.btn-danger-soft:hover {
+  background: linear-gradient(135deg, #b45309 0%, #991b1b 100%);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(6px);
+}
+
+.modal-card {
+  width: min(100%, 520px);
+  padding: 30px;
+  border-radius: 28px;
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  background:
+    radial-gradient(circle at top right, rgba(201, 123, 54, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 243, 236, 0.94));
+  box-shadow: 0 26px 56px rgba(15, 23, 42, 0.24);
+}
+
+.modal-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.modal-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hidden {
+  display: none;
+}
+
+.flex {
+  display: flex;
 }
 
 .form-group {
@@ -585,6 +854,14 @@ button, input {
     padding: 24px;
   }
 
+  .student-page-shell {
+    padding: 24px;
+  }
+
+  .student-form-panel {
+    min-height: auto;
+  }
+
   .auth-panel-head {
     flex-direction: column;
   }
@@ -605,6 +882,10 @@ button, input {
     padding: 22px;
   }
 
+  .student-page-shell {
+    padding: 18px;
+  }
+
   .content {
     padding: 18px;
   }
@@ -616,6 +897,29 @@ button, input {
 
   .brand-title {
     font-size: 34px;
+  }
+
+  .student-roster-head,
+  .student-card,
+  .modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-roster-title,
+  .modal-title {
+    font-size: 30px;
+  }
+
+  .student-drawer-toggle {
+    right: 16px;
+    bottom: 16px;
+    padding: 13px 16px;
+  }
+
+  .student-drawer-panel {
+    width: 100%;
+    border-radius: 24px 24px 0 0;
   }
 }
 
@@ -787,4 +1091,6 @@ button, input {
     text-shadow: 0 0 8px rgba(255, 231, 196, 0.12);
   }
 }
+
+
 

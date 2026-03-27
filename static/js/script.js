@@ -61,8 +61,152 @@ return
 document.getElementById("name").value=""
 document.getElementById("register").value=""
 document.getElementById("rfid").value=""
+loadStudents()
 
 })
+
+}
+
+
+let pendingStudentDelete = null
+
+
+function openStudentDrawer(){
+
+const drawer = document.getElementById("student-drawer")
+
+if(!drawer){
+return
+}
+
+drawer.classList.remove("hidden")
+drawer.classList.add("flex")
+loadStudents()
+
+}
+
+
+function closeStudentDrawer(){
+
+const drawer = document.getElementById("student-drawer")
+
+if(!drawer){
+return
+}
+
+drawer.classList.add("hidden")
+drawer.classList.remove("flex")
+
+}
+
+
+function loadStudents(){
+
+const studentList = document.getElementById("student-list")
+
+if(!studentList){
+return
+}
+
+fetch("/students")
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.length){
+studentList.innerHTML = `
+<div class="student-empty-state">
+<p class="student-empty-title">No students registered yet</p>
+<p class="helper-text">Students you add will appear here with their register number and RFID assignment.</p>
+</div>
+`
+return
+}
+
+studentList.innerHTML = data.map(student=>`
+<article class="student-card">
+<div class="student-card-copy">
+<div class="student-card-topline">
+<p class="student-card-name">${student.name}</p>
+<span class="student-chip">${student.register_number}</span>
+</div>
+<p class="student-card-meta">RFID: ${student.rfid_tag || "Not assigned yet"}</p>
+</div>
+<button class="btn btn-danger-soft student-delete-btn" onclick="openDeleteStudentModal('${student.id}','${escapeHtml(student.name)}')">Delete</button>
+</article>
+`).join("")
+
+})
+
+}
+
+
+function openDeleteStudentModal(studentId, studentName){
+
+const modal = document.getElementById("delete-student-modal")
+const message = document.getElementById("delete-student-message")
+
+if(!modal || !message){
+return
+}
+
+pendingStudentDelete = studentId
+message.textContent = `Delete ${studentName}? This will remove the student record and free the RFID for another student.`
+modal.classList.remove("hidden")
+modal.classList.add("flex")
+
+}
+
+
+function closeDeleteStudentModal(){
+
+const modal = document.getElementById("delete-student-modal")
+
+if(!modal){
+return
+}
+
+pendingStudentDelete = null
+modal.classList.add("hidden")
+modal.classList.remove("flex")
+
+}
+
+
+function confirmDeleteStudent(){
+
+if(!pendingStudentDelete){
+return
+}
+
+fetch(`/delete_student/${pendingStudentDelete}`,{
+method:"POST"
+})
+.then(async res=>({
+ok:res.ok,
+data:await res.json()
+}))
+.then(result=>{
+showToast(result.data.message,result.ok ? "success" : "error")
+
+if(!result.ok){
+return
+}
+
+closeDeleteStudentModal()
+loadStudents()
+})
+
+}
+
+
+function escapeHtml(value){
+
+return String(value)
+.replaceAll("&","&amp;")
+.replaceAll("<","&lt;")
+.replaceAll(">","&gt;")
+.replaceAll('"',"&quot;")
+.replaceAll("'","&#39;")
 
 }
 
@@ -338,6 +482,7 @@ table.innerHTML = ""
 document.addEventListener("DOMContentLoaded",()=>{
 const locationSelect = document.getElementById("scanner-location")
 const clearLogsModal = document.getElementById("clear-logs-modal")
+const deleteStudentModal = document.getElementById("delete-student-modal")
 
 if(locationSelect){
 locationSelect.addEventListener("change",toggleCustomLocation)
@@ -352,7 +497,16 @@ closeClearLogsModal()
 })
 }
 
+if(deleteStudentModal){
+deleteStudentModal.addEventListener("click",(event)=>{
+if(event.target === deleteStudentModal){
+closeDeleteStudentModal()
+}
+})
+}
+
 if(document.getElementById("logs")){
 loadLogs()
 }
+
 })

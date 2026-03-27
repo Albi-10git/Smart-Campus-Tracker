@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
@@ -17,7 +18,7 @@ movement_logs = db["movement_logs"]
 students.create_index(
     "rfid_tag",
     unique=True,
-    partialFilterExpression={"rfid_tag": {"$exists": True, "$nin": ["", None]}}
+    sparse=True
 )
 
 
@@ -134,9 +135,11 @@ def register_student():
 
     student = {
         "name": name,
-        "register_number": register_number,
-        "rfid_tag": rfid_tag
+        "register_number": register_number
     }
+
+    if rfid_tag:
+        student["rfid_tag"] = rfid_tag
 
     try:
         students.insert_one(student)
@@ -144,6 +147,44 @@ def register_student():
         return jsonify({"message": "This RFID is already assigned to another student."}), 400
 
     return jsonify({"message": "Student Registered"})
+
+
+@app.route("/students")
+def list_students():
+
+    student_list = []
+
+    for student in students.find({}, {"name": 1, "register_number": 1, "rfid_tag": 1}).sort("name", 1):
+        student_list.append(
+            {
+                "id": str(student["_id"]),
+                "name": student.get("name", ""),
+                "register_number": student.get("register_number", ""),
+                "rfid_tag": student.get("rfid_tag", "")
+            }
+        )
+
+    return jsonify(student_list)
+
+
+@app.route("/delete_student/<student_id>", methods=["POST"])
+def delete_student(student_id):
+
+    try:
+        object_id = ObjectId(student_id)
+    except Exception:
+        return jsonify({"message": "Invalid student selected."}), 400
+
+    deleted_student = students.find_one_and_delete({"_id": object_id})
+
+    if not deleted_student:
+        return jsonify({"message": "Student not found."}), 404
+
+    return jsonify(
+        {
+            "message": f'{deleted_student.get("name", "Student")} was removed. The RFID can now be assigned again.'
+        }
+    )
 
 
 # ---------------- VISITORS ----------------
@@ -188,7 +229,7 @@ def rfid_scan():
         if open_log:
             movement_logs.update_one(
                 {"_id": open_log["_id"]},
-                {"$set": {"time_out": current_time, "status": "Time Out"}}
+                {"$set": {"time_out": current_time, "status": "Time Out", "timestamp": current_time}}
             )
 
             return jsonify({"message": "Student Detected - Time Out"})
@@ -214,7 +255,7 @@ def rfid_scan():
         if open_log:
             movement_logs.update_one(
                 {"_id": open_log["_id"]},
-                {"$set": {"time_out": current_time, "status": "Time Out"}}
+                {"$set": {"time_out": current_time, "status": "Time Out", "timestamp": current_time}}
             )
 
             return jsonify({"message": "Visitor Detected - Time Out"})
@@ -243,7 +284,7 @@ def logs():
 
     logs = []
 
-    for log in movement_logs.find({}, {"_id":0}):
+    for log in movement_logs.find({}, {"_id":0}).sort("timestamp", -1):
         logs.append(log)
 
     return jsonify(logs)
@@ -257,4 +298,3 @@ def clear_logs():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
