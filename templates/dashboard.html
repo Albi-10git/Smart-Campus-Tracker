@@ -4,8 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/static/css/theme.css">
+<script>
+document.documentElement.style.visibility = "hidden"
+window.addEventListener("load", () => {
+  document.documentElement.style.visibility = "visible"
+})
+</script>
+<noscript>
+  <style>
+    html { visibility: visible !important; }
+  </style>
+</noscript>
 </head>
 <body>
 <div class="app-shell">
@@ -50,29 +60,29 @@
     </section>
 
     <section class="panel records-panel">
-      <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 md:p-8">
-        <div class="flex flex-col gap-2 mb-6">
-          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Scanner Control</p>
-          <h2 class="text-2xl font-semibold text-slate-900">RFID Scanner Simulator</h2>
-          <p class="text-sm text-slate-600">Simulate realistic checkpoint scans by entering a tag and selecting the campus location.</p>
+      <div class="scanner-card">
+        <div class="scanner-card-head">
+          <p class="scanner-kicker">Scanner Control</p>
+          <h2 class="scanner-title">RFID Scanner Simulator</h2>
+          <p class="scanner-copy">Simulate realistic checkpoint scans by entering a tag and selecting the campus location.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div class="flex flex-col gap-2">
-            <label for="scanner-rfid-tag" class="text-sm font-medium text-slate-700">RFID Tag</label>
+        <div class="scanner-grid">
+          <div class="scanner-field">
+            <label for="scanner-rfid-tag" class="scanner-label">RFID Tag</label>
             <input
               id="scanner-rfid-tag"
               type="text"
               placeholder="Enter RFID tag"
-              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              class="scanner-input"
             >
           </div>
 
-          <div class="flex flex-col gap-2">
-            <label for="scanner-location" class="text-sm font-medium text-slate-700">Location</label>
+          <div class="scanner-field">
+            <label for="scanner-location" class="scanner-label">Location</label>
             <select
               id="scanner-location"
-              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              class="scanner-input"
             >
               <option value="Main Gate">Main Gate</option>
               <option value="Classroom A">Classroom A</option>
@@ -84,19 +94,19 @@
             </select>
           </div>
 
-          <div id="custom-location-wrap" class="hidden flex-col gap-2">
-            <label for="custom-location" class="text-sm font-medium text-slate-700">Custom Location</label>
+          <div id="custom-location-wrap" class="hidden scanner-field">
+            <label for="custom-location" class="scanner-label">Custom Location</label>
             <input
               id="custom-location"
               type="text"
               placeholder="Enter your own location"
-              class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              class="scanner-input"
             >
           </div>
 
           <button
             onclick="scanRfid()"
-            class="w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-lg"
+            class="scanner-button"
           >
             Scan RFID
           </button>
@@ -135,27 +145,27 @@
 
 <div
   id="clear-logs-modal"
-  class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/45 px-4"
+  class="modal-overlay hidden"
 >
-  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-    <div class="flex flex-col gap-3">
-      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Confirmation</p>
-      <h3 class="text-2xl font-semibold text-slate-900">Clear Recent Campus Movement?</h3>
-      <p class="text-sm text-slate-600">This will remove all currently stored movement records from the dashboard log.</p>
+  <div class="modal-card">
+    <div class="modal-copy">
+      <p class="scanner-kicker">Confirmation</p>
+      <h3 class="modal-title">Clear Recent Campus Movement?</h3>
+      <p class="helper-text">This will remove all currently stored movement records from the dashboard log.</p>
     </div>
 
-    <div class="mt-6 flex justify-end gap-3">
+    <div class="modal-actions">
       <button
         type="button"
         onclick="closeClearLogsModal()"
-        class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        class="btn btn-secondary"
       >
         Cancel
       </button>
       <button
         type="button"
         onclick="confirmClearLogs()"
-        class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-emerald-800"
+        class="btn btn-primary"
       >
         Clear Records
       </button>
