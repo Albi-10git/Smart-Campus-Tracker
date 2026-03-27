@@ -47,9 +47,16 @@ rfid_tag:document.getElementById("rfid").value
 })
 
 })
-.then(res=>res.json())
+.then(async res=>({
+ok:res.ok,
+data:await res.json()
+}))
 .then(data=>{
-showToast(data.message,"success")
+showToast(data.data.message,data.ok ? "success" : "error")
+
+if(!data.ok){
+return
+}
 
 document.getElementById("name").value=""
 document.getElementById("register").value=""

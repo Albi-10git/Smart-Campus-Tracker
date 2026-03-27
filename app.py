@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, jsonify
+from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
 
 app = Flask(__name__)
@@ -12,6 +13,12 @@ users = db["users"]
 students = db["students"]
 visitors = db["visitors"]
 movement_logs = db["movement_logs"]
+
+students.create_index(
+    "rfid_tag",
+    unique=True,
+    partialFilterExpression={"rfid_tag": {"$exists": True, "$nin": ["", None]}}
+)
 
 
 def get_open_log(tag, location):
@@ -114,15 +121,27 @@ def register_student_page():
 @app.route("/register_student", methods=["POST"])
 def register_student():
 
-    data = request.json
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+    register_number = (data.get("register_number") or "").strip()
+    rfid_tag = (data.get("rfid_tag") or "").strip()
+
+    if not name or not register_number:
+        return jsonify({"message": "Student name and register number are required."}), 400
+
+    if rfid_tag and students.find_one({"rfid_tag": rfid_tag}):
+        return jsonify({"message": "This RFID is already assigned to another student."}), 400
 
     student = {
-        "name": data["name"],
-        "register_number": data["register_number"],
-        "rfid_tag": data["rfid_tag"]
+        "name": name,
+        "register_number": register_number,
+        "rfid_tag": rfid_tag
     }
 
-    students.insert_one(student)
+    try:
+        students.insert_one(student)
+    except DuplicateKeyError:
+        return jsonify({"message": "This RFID is already assigned to another student."}), 400
 
     return jsonify({"message": "Student Registered"})
 
@@ -238,5 +257,4 @@ def clear_logs():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
 
