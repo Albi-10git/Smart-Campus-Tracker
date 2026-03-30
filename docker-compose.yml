@@ -1,13 +1,21 @@
-version: "3"
-
 services:
-
-  web:
+  flask:
     build: .
+    environment:
+      MONGO_URI: mongodb://mongo:27017/
+      ARDUINO_ENABLED: "false"
+      FLASK_DEBUG: "false"
     ports:
       - "5000:5000"
+    depends_on:
+      - mongo
 
   mongo:
     image: mongo
     ports:
       - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

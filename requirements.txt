@@ -1,3 +1,8 @@
 Flask
 pymongo
 pyserial
+mongomock
+pytest
+requests
+selenium
+webdriver-manager

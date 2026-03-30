@@ -5,12 +5,23 @@ from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
+import mongomock
 
 from arduino_connection import create_arduino_bridge
 
 app = Flask(__name__)
 
-client = MongoClient("mongodb://localhost:27017/")
+def create_mongo_client():
+    if os.getenv("USE_MOCK_DB", "false").lower() in {"1", "true", "yes", "on"}:
+        return mongomock.MongoClient()
+
+    return MongoClient(
+        os.getenv("MONGO_URI", "mongodb://localhost:27017/"),
+        serverSelectionTimeoutMS=int(os.getenv("MONGO_TIMEOUT_MS", "5000"))
+    )
+
+
+client = create_mongo_client()
 db = client["campus_tracker"]
 
 users = db["users"]
@@ -56,6 +67,11 @@ def get_open_log(tag, location):
 
 @app.route("/")
 def login():
+    return render_template("login.html", active_form="login", message=None, message_type=None)
+
+
+@app.route("/login", methods=["GET"])
+def login_page():
     return render_template("login.html", active_form="login", message=None, message_type=None)
 
 
@@ -334,8 +350,10 @@ def clear_logs():
 
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "true").lower() in {"1", "true", "yes", "on"}
+    host = os.getenv("FLASK_HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "5000"))
 
     if not debug_mode or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         arduino_bridge.start()
 
-    app.run(debug=debug_mode)
+    app.run(host=host, port=port, debug=debug_mode)
