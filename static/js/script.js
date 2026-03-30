@@ -70,6 +70,7 @@ loadStudents(currentStudentSort)
 
 let pendingStudentDelete = null
 let currentStudentSort = "name"
+let lastHardwareScanSignature = ""
 
 
 function openStudentDrawer(){
@@ -332,6 +333,76 @@ loadLogs()
 }
 
 
+function loadArduinoStatus(){
+
+fetch("/arduino_status")
+.then(res=>res.json())
+.then(data=>{
+
+const statusMessage = document.getElementById("arduino-status-message")
+const lastScan = document.getElementById("arduino-last-scan")
+const locationSelect = document.getElementById("scanner-location")
+
+if(!statusMessage || !lastScan){
+return
+}
+
+if(!data.enabled){
+statusMessage.textContent = "Arduino bridge is disabled. Set ARDUINO_ENABLED=true to receive hardware scans."
+lastScan.textContent = ""
+return
+}
+
+if(!data.pyserial_installed){
+statusMessage.textContent = "Arduino bridge is waiting for pyserial. Install it before starting hardware scans."
+lastScan.textContent = ""
+return
+}
+
+if(data.default_location && locationSelect && !locationSelect.dataset.readerInitialized){
+const existingOption = Array.from(locationSelect.options).find(option=>
+option.value.toLowerCase() === data.default_location.toLowerCase()
+)
+
+if(existingOption){
+locationSelect.value = existingOption.value
+}else{
+const customOption = document.createElement("option")
+customOption.value = data.default_location
+customOption.textContent = data.default_location
+locationSelect.insertBefore(customOption, locationSelect.lastElementChild)
+locationSelect.value = data.default_location
+}
+
+locationSelect.dataset.readerInitialized = "true"
+toggleCustomLocation()
+}
+
+if(data.connected){
+statusMessage.textContent = `Arduino connected on ${data.port} at ${data.baud_rate} baud. Reader location: ${data.default_location}.`
+}else if(data.last_error){
+statusMessage.textContent = `Arduino not connected yet. ${data.last_error}`
+}else{
+statusMessage.textContent = `Waiting for Arduino reader on ${data.port}...`
+}
+
+if(data.last_scan_time){
+const scanSignature = `${data.last_tag || ""}|${data.last_location || ""}|${data.last_scan_time}`
+lastScan.textContent = `Last hardware scan: ${data.last_tag || "-"} at ${data.last_location || data.default_location} (${data.last_scan_time})${data.last_message ? ` - ${data.last_message}` : ""}`
+
+if(scanSignature !== lastHardwareScanSignature){
+lastHardwareScanSignature = scanSignature
+loadLogs()
+}
+}else{
+lastScan.textContent = "No hardware scans received yet."
+}
+
+})
+
+}
+
+
 function toggleCustomLocation(){
 
 const locationSelect = document.getElementById("scanner-location")
@@ -488,20 +559,15 @@ modal.classList.remove("flex")
 
 function confirmClearLogs(){
 
-fetch("/clear_logs",{
-method:"POST"
-})
-.then(res=>res.json())
-.then(data=>{
 closeClearLogsModal()
-showToast(data.message,"success")
 
 const table = document.getElementById("logs")
 
 if(table){
 table.innerHTML = ""
 }
-})
+
+showToast("Dashboard logs cleared from view. Use Load Logs to show them again.","success")
 
 }
 
@@ -534,6 +600,11 @@ closeDeleteStudentModal()
 
 if(document.getElementById("logs")){
 loadLogs()
+}
+
+if(document.getElementById("arduino-status-panel")){
+loadArduinoStatus()
+setInterval(loadArduinoStatus,5000)
 }
 
 })

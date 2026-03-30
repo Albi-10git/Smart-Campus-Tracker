@@ -62,18 +62,21 @@ window.addEventListener("load", () => {
     <section class="panel records-panel">
       <div class="scanner-card">
         <div class="scanner-card-head">
-          <p class="scanner-kicker">Scanner Control</p>
-          <h2 class="scanner-title">RFID Scanner Simulator</h2>
-          <p class="scanner-copy">Simulate realistic checkpoint scans by entering a tag and selecting the campus location.</p>
+          <h2 class="scanner-title">Arduino RFID Scanner</h2>
+        </div>
+
+        <div class="scanner-status" id="arduino-status-panel">
+          <p id="arduino-status-message" class="helper-text">Checking Arduino reader status...</p>
+          <p id="arduino-last-scan" class="helper-text"></p>
         </div>
 
         <div class="scanner-grid">
           <div class="scanner-field">
-            <label for="scanner-rfid-tag" class="scanner-label">RFID Tag</label>
+            <label for="scanner-rfid-tag" class="scanner-label">Manual RFID Tag</label>
             <input
               id="scanner-rfid-tag"
               type="text"
-              placeholder="Enter RFID tag"
+              placeholder="Use only if hardware scan is unavailable"
               class="scanner-input"
             >
           </div>
@@ -108,7 +111,7 @@ window.addEventListener("load", () => {
             onclick="scanRfid()"
             class="scanner-button"
           >
-            Scan RFID
+            Manual Scan
           </button>
         </div>
       </div>
@@ -117,10 +120,8 @@ window.addEventListener("load", () => {
     <section class="panel records-panel">
       <div class="records-row records-intro">
         <div>
-          <p class="eyebrow eyebrow-muted">Live Records</p>
           <h2 class="section-title">Recent Campus Movement</h2>
         </div>
-        <p class="helper-text">Student and visitor logs appear here after you load records.</p>
       </div>
 
       <div class="table-wrap">
@@ -150,8 +151,8 @@ window.addEventListener("load", () => {
   <div class="modal-card">
     <div class="modal-copy">
       <p class="scanner-kicker">Confirmation</p>
-      <h3 class="modal-title">Clear Recent Campus Movement?</h3>
-      <p class="helper-text">This will remove all currently stored movement records from the dashboard log.</p>
+      <h3 class="modal-title">Clear Dashboard Log View?</h3>
+      <p class="helper-text">This will only clear the table on the dashboard. Use Load Logs anytime to show the saved movement records again.</p>
     </div>
 
     <div class="modal-actions">
@@ -167,7 +168,7 @@ window.addEventListener("load", () => {
         onclick="confirmClearLogs()"
         class="btn btn-primary"
       >
-        Clear Records
+        Clear View
       </button>
     </div>
   </div>

@@ -1,9 +1,12 @@
+import os
 from datetime import datetime
 
 from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
+
+from arduino_connection import create_arduino_bridge
 
 app = Flask(__name__)
 
@@ -19,6 +22,19 @@ students.create_index(
     "rfid_tag",
     unique=True,
     sparse=True
+)
+
+
+def normalize_rfid_tag(tag):
+    return "".join((tag or "").split()).upper()
+
+
+arduino_bridge = create_arduino_bridge(
+    app_base_url=os.getenv("APP_BASE_URL", "http://127.0.0.1:5000"),
+    serial_port=os.getenv("ARDUINO_SERIAL_PORT", "COM10"),
+    baud_rate=int(os.getenv("ARDUINO_BAUD_RATE", "9600")),
+    default_location=os.getenv("RFID_DEFAULT_LOCATION", "Main Gate"),
+    enabled=os.getenv("ARDUINO_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
 )
 
 
@@ -125,7 +141,7 @@ def register_student():
     data = request.json or {}
     name = (data.get("name") or "").strip()
     register_number = (data.get("register_number") or "").strip()
-    rfid_tag = (data.get("rfid_tag") or "").strip()
+    rfid_tag = normalize_rfid_tag(data.get("rfid_tag"))
 
     if not name or not register_number:
         return jsonify({"message": "Student name and register number are required."}), 400
@@ -202,13 +218,17 @@ def register_visitor_page():
 @app.route("/register_visitor", methods=["POST"])
 def register_visitor():
 
-    data = request.json
+    data = request.json or {}
+    rfid_tag = normalize_rfid_tag(data.get("rfid_tag"))
+
+    if not rfid_tag:
+        return jsonify({"message": "Visitor RFID tag is required."}), 400
 
     visitor = {
         "name": data["name"],
         "phone": data["phone"],
         "purpose": data["purpose"],
-        "rfid_tag": data["rfid_tag"]
+        "rfid_tag": rfid_tag
     }
 
     visitors.insert_one(visitor)
@@ -221,9 +241,16 @@ def register_visitor():
 @app.route("/rfid_scan", methods=["POST"])
 def rfid_scan():
 
-    data = request.json
-    tag = data["rfid_tag"]
-    location = data["location"]
+    data = request.json or {}
+    tag = normalize_rfid_tag(data.get("rfid_tag"))
+    location = (data.get("location") or arduino_bridge.default_location).strip()
+
+    if not tag:
+        return jsonify({"message": "RFID tag is required."}), 400
+
+    if not location:
+        return jsonify({"message": "Location is required."}), 400
+
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     open_log = get_open_log(tag, location)
 
@@ -284,6 +311,11 @@ def rfid_scan():
     return jsonify({"message": "RFID not found"})
 
 
+@app.route("/arduino_status")
+def arduino_status():
+    return jsonify(arduino_bridge.get_status())
+
+
 @app.route("/logs")
 def logs():
 
@@ -297,9 +329,13 @@ def logs():
 
 @app.route("/clear_logs", methods=["POST"])
 def clear_logs():
-    movement_logs.delete_many({})
-    return jsonify({"message": "Recent campus movement cleared"})
+    return jsonify({"message": "Dashboard log view can be cleared without deleting saved movement records."})
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug_mode = os.getenv("FLASK_DEBUG", "true").lower() in {"1", "true", "yes", "on"}
+
+    if not debug_mode or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        arduino_bridge.start()
+
+    app.run(debug=debug_mode)
