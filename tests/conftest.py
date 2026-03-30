@@ -1,5 +1,6 @@
 import importlib
 import os
+from pathlib import Path
 import sys
 
 import pytest
@@ -7,6 +8,11 @@ import pytest
 os.environ["USE_MOCK_DB"] = "true"
 os.environ["ARDUINO_ENABLED"] = "false"
 os.environ["FLASK_DEBUG"] = "false"
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 @pytest.fixture(scope="session")
