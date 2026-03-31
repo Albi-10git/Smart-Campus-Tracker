@@ -1,16 +1,19 @@
-FROM python:3.10
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV FLASK_HOST=0.0.0.0
 ENV PORT=5000
 ENV ARDUINO_ENABLED=false
 
+COPY requirements.txt .
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
 EXPOSE 5000
 
-CMD ["python","app.py"] 
+CMD ["python","app.py"]

@@ -1,4 +1,6 @@
+import os
 import threading
+from pathlib import Path
 
 import pytest
 from selenium import webdriver
@@ -43,11 +45,23 @@ def browser():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
 
+    chrome_binary = os.getenv("CHROME_BINARY_PATH")
+    chromedriver_path = os.getenv("CHROMEDRIVER_PATH")
+
+    if chrome_binary:
+        options.binary_location = chrome_binary
+
     try:
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+        if chromedriver_path and Path(chromedriver_path).exists():
+            driver = webdriver.Chrome(
+                service=Service(chromedriver_path),
+                options=options
+            )
+        else:
+            driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=options
+            )
     except WebDriverException as exc:
         pytest.skip(f"Chrome WebDriver is unavailable: {exc}")
 

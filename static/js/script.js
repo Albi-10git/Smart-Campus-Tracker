@@ -401,10 +401,17 @@ return String(value)
 }
 
 
+function sanitizePhoneNumber(value){
+
+return String(value || "").replace(/\D/g,"").slice(0,10)
+
+}
+
+
 function registerVisitor(){
 
 const phoneInput = document.getElementById("phone")
-const phoneNumber = phoneInput ? phoneInput.value.replace(/\D/g,"").slice(0,10) : ""
+const phoneNumber = phoneInput ? sanitizePhoneNumber(phoneInput.value) : ""
 
 if(phoneInput){
 phoneInput.value = phoneNumber
@@ -781,6 +788,7 @@ showToast("Dashboard logs cleared from view. Use Load Logs to show them again.",
 }
 
 
+if(typeof document !== "undefined"){
 document.addEventListener("DOMContentLoaded",()=>{
 const locationSelect = document.getElementById("scanner-location")
 const clearLogsModal = document.getElementById("clear-logs-modal")
@@ -819,7 +827,7 @@ closeDeleteVisitorModal()
 
 if(phoneInput){
 phoneInput.addEventListener("input",()=>{
-phoneInput.value = phoneInput.value.replace(/\D/g,"").slice(0,10)
+phoneInput.value = sanitizePhoneNumber(phoneInput.value)
 })
 }
 
@@ -829,3 +837,13 @@ setInterval(loadArduinoStatus,5000)
 }
 
 })
+}
+
+
+if(typeof module !== "undefined" && module.exports){
+module.exports = {
+escapeHtml,
+isRecentLog,
+sanitizePhoneNumber
+}
+}
