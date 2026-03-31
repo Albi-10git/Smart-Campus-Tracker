@@ -4,7 +4,7 @@ from datetime import datetime
 from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
 import requests
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, OperationFailure
 from pymongo import MongoClient
 import mongomock
 
@@ -30,17 +30,22 @@ students = db["students"]
 visitors = db["visitors"]
 movement_logs = db["movement_logs"]
 
-students.create_index(
-    "rfid_tag",
-    unique=True,
-    sparse=True
-)
+def ensure_unique_rfid_index(collection, collection_name):
+    try:
+        collection.create_index(
+            "rfid_tag",
+            unique=True,
+            sparse=True
+        )
+    except OperationFailure:
+        app.logger.warning(
+            "Skipping unique RFID index for %s because existing data contains duplicates.",
+            collection_name
+        )
 
-visitors.create_index(
-    "rfid_tag",
-    unique=True,
-    sparse=True
-)
+
+ensure_unique_rfid_index(students, "students")
+ensure_unique_rfid_index(visitors, "visitors")
 
 
 def normalize_rfid_tag(tag):
