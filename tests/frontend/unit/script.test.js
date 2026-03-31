@@ -1,4 +1,3 @@
-const { describe, expect, it } = require("vitest")
 const { escapeHtml, isRecentLog, sanitizePhoneNumber } = require("../../../static/js/script.js")
 
 describe("frontend helpers", () => {
@@ -19,3 +18,4 @@ describe("frontend helpers", () => {
     expect(isRecentLog(oldTimestamp)).toBe(false)
   })
 })
+
