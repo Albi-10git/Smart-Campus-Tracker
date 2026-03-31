@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 import time
 import urllib.error
@@ -26,18 +27,23 @@ class ArduinoRFIDBridge:
         self.last_error = ""
         self._thread = None
         self._stop_event = threading.Event()
+        self.status_update_url = f"{self.app_base_url}/arduino_status/update"
 
     def start(self):
         if not self.enabled or serial is None or self._thread:
             if serial is None:
                 self.last_error = "pyserial is not installed. Run: pip install pyserial"
+            self._publish_status()
             return
 
         self._thread = threading.Thread(target=self._read_loop, daemon=True)
         self._thread.start()
+        self._publish_status()
 
     def stop(self):
         self._stop_event.set()
+        self.connected = False
+        self._publish_status()
 
     def get_status(self):
         return {
@@ -60,6 +66,7 @@ class ArduinoRFIDBridge:
                 with serial.Serial(self.serial_port, self.baud_rate, timeout=1) as connection:
                     self.connected = True
                     self.last_error = ""
+                    self._publish_status()
 
                     while not self._stop_event.is_set():
                         raw_line = connection.readline().decode("utf-8", errors="ignore").strip()
@@ -77,16 +84,19 @@ class ArduinoRFIDBridge:
                         self.last_location = location
                         self.last_scan_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         self._send_scan(tag, location)
+                        self._publish_status()
             except PermissionError:  # pragma: no cover
                 self.connected = False
                 self.last_error = (
                     f"COM port {self.serial_port} is busy. Close Arduino Serial Monitor, "
                     "stop any old Flask/Python process, then restart the app."
                 )
+                self._publish_status()
                 time.sleep(3)
             except Exception as exc:  # pragma: no cover
                 self.connected = False
                 self.last_error = str(exc)
+                self._publish_status()
                 time.sleep(3)
 
     def _parse_serial_message(self, raw_line):
@@ -131,9 +141,27 @@ class ArduinoRFIDBridge:
             error_body = exc.read().decode("utf-8", errors="ignore")
             self.last_message = ""
             self.last_error = f"HTTP {exc.code}: {error_body}"
+            self._publish_status()
         except Exception as exc:  # pragma: no cover
             self.last_message = ""
             self.last_error = str(exc)
+            self._publish_status()
+
+    def _publish_status(self):
+        payload = json.dumps(self.get_status()).encode("utf-8")
+
+        request = urllib.request.Request(
+            self.status_update_url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=5):
+                return
+        except Exception:
+            return
 
 
 def create_arduino_bridge(app_base_url, serial_port, baud_rate, default_location, enabled=True):
@@ -144,3 +172,22 @@ def create_arduino_bridge(app_base_url, serial_port, baud_rate, default_location
         default_location=default_location,
         enabled=enabled
     )
+
+
+if __name__ == "__main__":
+    bridge = create_arduino_bridge(
+        app_base_url=os.getenv("APP_BASE_URL", "http://127.0.0.1:5000"),
+        serial_port=os.getenv("ARDUINO_SERIAL_PORT", "COM10"),
+        baud_rate=int(os.getenv("ARDUINO_BAUD_RATE", "9600")),
+        default_location=os.getenv("RFID_DEFAULT_LOCATION", "Main Gate"),
+        enabled=os.getenv("ARDUINO_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+    )
+
+    bridge.start()
+
+    try:
+        while True:
+            bridge._publish_status()
+            time.sleep(5)
+    except KeyboardInterrupt:
+        bridge.stop()

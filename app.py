@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
@@ -95,6 +95,55 @@ arduino_bridge = create_arduino_bridge(
     default_location=os.getenv("RFID_DEFAULT_LOCATION", "Main Gate"),
     enabled=os.getenv("ARDUINO_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
 )
+
+external_arduino_status = {
+    "enabled": False,
+    "connected": False,
+    "port": "",
+    "baud_rate": 0,
+    "default_location": os.getenv("RFID_DEFAULT_LOCATION", "Main Gate"),
+    "last_tag": "",
+    "last_location": os.getenv("RFID_DEFAULT_LOCATION", "Main Gate"),
+    "last_message": "",
+    "last_scan_time": "",
+    "last_error": "",
+    "pyserial_installed": True,
+    "updated_at": None
+}
+
+
+def update_external_arduino_status(payload):
+    external_arduino_status.update(
+        {
+            "enabled": bool(payload.get("enabled", external_arduino_status["enabled"])),
+            "connected": bool(payload.get("connected", external_arduino_status["connected"])),
+            "port": payload.get("port", external_arduino_status["port"]),
+            "baud_rate": payload.get("baud_rate", external_arduino_status["baud_rate"]),
+            "default_location": payload.get("default_location", external_arduino_status["default_location"]),
+            "last_tag": payload.get("last_tag", external_arduino_status["last_tag"]),
+            "last_location": payload.get("last_location", external_arduino_status["last_location"]),
+            "last_message": payload.get("last_message", external_arduino_status["last_message"]),
+            "last_scan_time": payload.get("last_scan_time", external_arduino_status["last_scan_time"]),
+            "last_error": payload.get("last_error", external_arduino_status["last_error"]),
+            "pyserial_installed": bool(payload.get("pyserial_installed", external_arduino_status["pyserial_installed"])),
+            "updated_at": datetime.now()
+        }
+    )
+
+
+def get_effective_arduino_status():
+    local_status = arduino_bridge.get_status()
+    updated_at = external_arduino_status.get("updated_at")
+
+    if updated_at and datetime.now() - updated_at <= timedelta(seconds=15):
+        external_status = {
+            key: value
+            for key, value in external_arduino_status.items()
+            if key != "updated_at"
+        }
+        return external_status
+
+    return local_status
 
 
 def get_open_log(tag, location):
@@ -439,7 +488,13 @@ def rfid_scan():
 
 @app.route("/arduino_status")
 def arduino_status():
-    return jsonify(arduino_bridge.get_status())
+    return jsonify(get_effective_arduino_status())
+
+
+@app.route("/arduino_status/update", methods=["POST"])
+def update_arduino_status():
+    update_external_arduino_status(request.json or {})
+    return jsonify({"message": "Arduino status updated"})
 
 
 @app.route("/logs")
