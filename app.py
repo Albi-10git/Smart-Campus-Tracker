@@ -57,6 +57,19 @@ def normalize_phone_number(phone):
     return (phone or "").strip()
 
 
+def parse_bool(value, default=False):
+    if isinstance(value, bool):
+        return value
+
+    if value is None:
+        return default
+
+    if isinstance(value, (int, float)):
+        return value != 0
+
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def get_app_timezone():
     timezone_name = os.getenv("APP_TIMEZONE", "Asia/Kolkata").strip()
 
@@ -107,7 +120,7 @@ arduino_bridge = create_arduino_bridge(
     serial_port=os.getenv("ARDUINO_SERIAL_PORT", "COM10"),
     baud_rate=int(os.getenv("ARDUINO_BAUD_RATE", "9600")),
     default_location=os.getenv("RFID_DEFAULT_LOCATION", "Main Gate"),
-    enabled=os.getenv("ARDUINO_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+    enabled=parse_bool(os.getenv("ARDUINO_ENABLED", "true"), default=True)
 )
 
 external_arduino_status = {
@@ -129,8 +142,8 @@ external_arduino_status = {
 def update_external_arduino_status(payload):
     external_arduino_status.update(
         {
-            "enabled": bool(payload.get("enabled", external_arduino_status["enabled"])),
-            "connected": bool(payload.get("connected", external_arduino_status["connected"])),
+            "enabled": parse_bool(payload.get("enabled", external_arduino_status["enabled"]), default=external_arduino_status["enabled"]),
+            "connected": parse_bool(payload.get("connected", external_arduino_status["connected"]), default=external_arduino_status["connected"]),
             "port": payload.get("port", external_arduino_status["port"]),
             "baud_rate": payload.get("baud_rate", external_arduino_status["baud_rate"]),
             "default_location": payload.get("default_location", external_arduino_status["default_location"]),
@@ -139,9 +152,20 @@ def update_external_arduino_status(payload):
             "last_message": payload.get("last_message", external_arduino_status["last_message"]),
             "last_scan_time": payload.get("last_scan_time", external_arduino_status["last_scan_time"]),
             "last_error": payload.get("last_error", external_arduino_status["last_error"]),
-            "pyserial_installed": bool(payload.get("pyserial_installed", external_arduino_status["pyserial_installed"])),
+            "pyserial_installed": parse_bool(
+                payload.get("pyserial_installed", external_arduino_status["pyserial_installed"]),
+                default=external_arduino_status["pyserial_installed"]
+            ),
             "updated_at": datetime.now(get_app_timezone())
         }
+    )
+
+
+def get_arduino_disabled_hint():
+    return (
+        "Hardware scanning is turned off for this app process. "
+        "Set ARDUINO_ENABLED=true when running Flask directly, or if the dashboard is running in Docker "
+        "keep the web app as-is and start scripts/start-arduino-bridge.ps1 on Windows so the host can read the COM port."
     )
 
 
@@ -156,6 +180,9 @@ def get_effective_arduino_status():
             if key != "updated_at"
         }
         return external_status
+
+    if not local_status["enabled"]:
+        local_status["status_message"] = get_arduino_disabled_hint()
 
     return local_status
 
@@ -528,7 +555,7 @@ def clear_logs():
 
 
 if __name__ == "__main__":
-    debug_mode = os.getenv("FLASK_DEBUG", "true").lower() in {"1", "true", "yes", "on"}
+    debug_mode = parse_bool(os.getenv("FLASK_DEBUG", "true"), default=True)
     host = os.getenv("FLASK_HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
 

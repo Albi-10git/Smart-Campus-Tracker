@@ -536,7 +536,7 @@ return
 }
 
 if(!data.enabled){
-statusMessage.textContent = "Arduino bridge is disabled. Set ARDUINO_ENABLED=true to receive hardware scans."
+statusMessage.textContent = data.status_message || "Arduino bridge is disabled. Set ARDUINO_ENABLED=true to receive hardware scans."
 lastScan.textContent = ""
 return
 }
