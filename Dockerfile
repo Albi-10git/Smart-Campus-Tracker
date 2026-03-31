@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV FLASK_HOST=0.0.0.0
 ENV PORT=5000
 ENV ARDUINO_ENABLED=false
+ENV APP_TIMEZONE=Asia/Kolkata
 
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip && \

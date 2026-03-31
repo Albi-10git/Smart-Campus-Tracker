@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
@@ -54,6 +55,19 @@ def normalize_rfid_tag(tag):
 
 def normalize_phone_number(phone):
     return (phone or "").strip()
+
+
+def get_app_timezone():
+    timezone_name = os.getenv("APP_TIMEZONE", "Asia/Kolkata").strip()
+
+    try:
+        return ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError:
+        return datetime.now().astimezone().tzinfo
+
+
+def current_timestamp():
+    return datetime.now(get_app_timezone()).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def send_visitor_registration_sms(phone, purpose, rfid_tag):
@@ -126,7 +140,7 @@ def update_external_arduino_status(payload):
             "last_scan_time": payload.get("last_scan_time", external_arduino_status["last_scan_time"]),
             "last_error": payload.get("last_error", external_arduino_status["last_error"]),
             "pyserial_installed": bool(payload.get("pyserial_installed", external_arduino_status["pyserial_installed"])),
-            "updated_at": datetime.now()
+            "updated_at": datetime.now(get_app_timezone())
         }
     )
 
@@ -135,7 +149,7 @@ def get_effective_arduino_status():
     local_status = arduino_bridge.get_status()
     updated_at = external_arduino_status.get("updated_at")
 
-    if updated_at and datetime.now() - updated_at <= timedelta(seconds=15):
+    if updated_at and datetime.now(get_app_timezone()) - updated_at <= timedelta(seconds=15):
         external_status = {
             key: value
             for key, value in external_arduino_status.items()
@@ -426,7 +440,7 @@ def rfid_scan():
     if not location:
         return jsonify({"message": "Location is required."}), 400
 
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_time = current_timestamp()
     open_log = get_open_log(tag, location)
 
     student = students.find_one({"rfid_tag": tag})

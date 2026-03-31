@@ -5,6 +5,7 @@ services:
       MONGO_URI: mongodb://mongo:27017/
       ARDUINO_ENABLED: "false"
       FLASK_DEBUG: "false"
+      APP_TIMEZONE: Asia/Kolkata
     ports:
       - "5000:5000"
     depends_on:
