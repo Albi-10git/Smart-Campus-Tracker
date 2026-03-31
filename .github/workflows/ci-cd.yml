@@ -137,6 +137,10 @@ jobs:
       contents: read
       packages: read
 
+    outputs:
+      can_push: ${{ steps.registry.outputs.can_push }}
+      image_repo: ${{ steps.registry.outputs.image_repo }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -144,22 +148,48 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Resolve Docker registry settings
+        id: registry
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ] && [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            echo "can_push=true" >> "$GITHUB_OUTPUT"
+            echo "image_repo=${DOCKERHUB_USERNAME}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "can_push=false" >> "$GITHUB_OUTPUT"
+            echo "image_repo=${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Log in to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.registry.outputs.can_push == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and optionally push Docker image
+      - name: Build Docker image for validation
+        if: steps.registry.outputs.can_push != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          load: true
+          tags: ${{ env.IMAGE_NAME }}:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Docker image
+        if: steps.registry.outputs.can_push == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ steps.registry.outputs.image_repo }}:latest
+            ${{ steps.registry.outputs.image_repo }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -173,7 +203,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Resolve deployment settings
+        id: deploy_check
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          if [ "${{ needs.docker-build.outputs.can_push }}" = "true" ] && [ -n "$SSH_HOST" ] && [ -n "$SSH_USER" ] && [ -n "$SSH_PRIVATE_KEY" ] && [ -n "$MONGO_URI" ]; then
+            echo "can_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "can_deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Copy deployment script to remote host
+        if: steps.deploy_check.outputs.can_deploy == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -184,9 +229,10 @@ jobs:
           target: "/tmp/smart-campus-tracker"
 
       - name: Deploy latest Docker image over SSH
+        if: steps.deploy_check.outputs.can_deploy == 'true'
         uses: appleboy/ssh-action@v1.2.0
         env:
-          IMAGE_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          IMAGE_REPO: ${{ needs.docker-build.outputs.image_repo }}
           IMAGE_TAG: latest
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           HOST_PORT: ${{ env.APP_PORT }}
@@ -201,4 +247,3 @@ jobs:
           script: |
             chmod +x /tmp/smart-campus-tracker/scripts/deploy.sh
             /tmp/smart-campus-tracker/scripts/deploy.sh
-
