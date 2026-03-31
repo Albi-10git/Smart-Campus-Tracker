@@ -3,6 +3,7 @@ from datetime import datetime
 
 from bson import ObjectId
 from flask import Flask, render_template, request, redirect, jsonify
+import requests
 from pymongo.errors import DuplicateKeyError
 from pymongo import MongoClient
 import mongomock
@@ -35,9 +36,51 @@ students.create_index(
     sparse=True
 )
 
+visitors.create_index(
+    "rfid_tag",
+    unique=True,
+    sparse=True
+)
+
 
 def normalize_rfid_tag(tag):
     return "".join((tag or "").split()).upper()
+
+
+def normalize_phone_number(phone):
+    return (phone or "").strip()
+
+
+def send_visitor_registration_sms(phone, purpose, rfid_tag):
+    account_sid = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+    from_number = os.getenv("TWILIO_FROM_NUMBER", "").strip()
+    country_code = os.getenv("SMS_COUNTRY_CODE", "+91").strip()
+
+    if not account_sid or not auth_token or not from_number:
+        return False, "Visitor registered. SMS not sent because SMS settings are not configured."
+
+    message_body = f"Purpose of visit: {purpose}. RFID tag: {rfid_tag}."
+    to_number = f"{country_code}{phone}"
+
+    try:
+        response = requests.post(
+            f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json",
+            auth=(account_sid, auth_token),
+            data={
+                "From": from_number,
+                "To": to_number,
+                "Body": message_body
+            },
+            timeout=10
+        )
+    except requests.RequestException:
+        return False, "Visitor registered, but SMS could not be sent."
+
+    if response.ok:
+        return True, "Visitor details sent to the provided phone number."
+
+    return False, "Visitor registered, but SMS could not be sent."
 
 
 arduino_bridge = create_arduino_bridge(
@@ -162,8 +205,8 @@ def register_student():
     if not name or not register_number:
         return jsonify({"message": "Student name and register number are required."}), 400
 
-    if rfid_tag and students.find_one({"rfid_tag": rfid_tag}):
-        return jsonify({"message": "This RFID is already assigned to another student."}), 400
+    if rfid_tag and (students.find_one({"rfid_tag": rfid_tag}) or visitors.find_one({"rfid_tag": rfid_tag})):
+        return jsonify({"message": "This RFID is already assigned to another person."}), 400
 
     student = {
         "name": name,
@@ -176,7 +219,7 @@ def register_student():
     try:
         students.insert_one(student)
     except DuplicateKeyError:
-        return jsonify({"message": "This RFID is already assigned to another student."}), 400
+        return jsonify({"message": "This RFID is already assigned to another person."}), 400
 
     return jsonify({"message": "Student Registered"})
 
@@ -235,21 +278,83 @@ def register_visitor_page():
 def register_visitor():
 
     data = request.json or {}
+    name = (data.get("name") or "").strip()
+    phone = normalize_phone_number(data.get("phone"))
+    purpose = (data.get("purpose") or "").strip()
     rfid_tag = normalize_rfid_tag(data.get("rfid_tag"))
+
+    if not name or not purpose:
+        return jsonify({"message": "Visitor name and purpose are required."}), 400
+
+    if not phone.isdigit() or len(phone) != 10:
+        return jsonify({"message": "Phone number must contain exactly 10 digits."}), 400
 
     if not rfid_tag:
         return jsonify({"message": "Visitor RFID tag is required."}), 400
 
+    if visitors.find_one({"rfid_tag": rfid_tag}) or students.find_one({"rfid_tag": rfid_tag}):
+        return jsonify({"message": "This RFID is already assigned to another person."}), 400
+
     visitor = {
-        "name": data["name"],
-        "phone": data["phone"],
-        "purpose": data["purpose"],
+        "name": name,
+        "phone": phone,
+        "purpose": purpose,
         "rfid_tag": rfid_tag
     }
 
-    visitors.insert_one(visitor)
+    try:
+        visitors.insert_one(visitor)
+    except DuplicateKeyError:
+        return jsonify({"message": "This RFID is already assigned to another person."}), 400
+    _, sms_message = send_visitor_registration_sms(phone, purpose, rfid_tag)
 
-    return jsonify({"message": "Visitor Registered"})
+    return jsonify({"message": "Visitor Registered", "sms_message": sms_message})
+
+
+@app.route("/visitors")
+def list_visitors():
+
+    visitor_list = []
+    sort_mode = (request.args.get("sort") or "name").strip().lower()
+    sort_order = [("name", 1)]
+
+    if sort_mode == "rfid":
+        sort_order = [("rfid_tag", 1), ("name", 1)]
+    elif sort_mode == "phone":
+        sort_order = [("phone", 1), ("name", 1)]
+
+    for visitor in visitors.find({}, {"name": 1, "phone": 1, "purpose": 1, "rfid_tag": 1}).sort(sort_order):
+        visitor_list.append(
+            {
+                "id": str(visitor["_id"]),
+                "name": visitor.get("name", ""),
+                "phone": visitor.get("phone", ""),
+                "purpose": visitor.get("purpose", ""),
+                "rfid_tag": visitor.get("rfid_tag", "")
+            }
+        )
+
+    return jsonify(visitor_list)
+
+
+@app.route("/delete_visitor/<visitor_id>", methods=["POST"])
+def delete_visitor(visitor_id):
+
+    try:
+        object_id = ObjectId(visitor_id)
+    except Exception:
+        return jsonify({"message": "Invalid visitor selected."}), 400
+
+    deleted_visitor = visitors.find_one_and_delete({"_id": object_id})
+
+    if not deleted_visitor:
+        return jsonify({"message": "Visitor not found."}), 404
+
+    return jsonify(
+        {
+            "message": f'{deleted_visitor.get("name", "Visitor")} was removed. The RFID can now be assigned again.'
+        }
+    )
 
 
 # ---------------- RFID SIMULATION ----------------

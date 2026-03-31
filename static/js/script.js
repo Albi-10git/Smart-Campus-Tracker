@@ -69,7 +69,9 @@ loadStudents(currentStudentSort)
 
 
 let pendingStudentDelete = null
+let pendingVisitorDelete = null
 let currentStudentSort = "name"
+let currentVisitorSort = "name"
 let lastHardwareScanSignature = ""
 
 
@@ -227,6 +229,166 @@ loadStudents(currentStudentSort)
 }
 
 
+function openVisitorDrawer(){
+
+const drawer = document.getElementById("visitor-drawer")
+
+if(!drawer){
+return
+}
+
+drawer.classList.remove("hidden")
+drawer.classList.add("flex")
+loadVisitors(currentVisitorSort)
+
+}
+
+
+function closeVisitorDrawer(){
+
+const drawer = document.getElementById("visitor-drawer")
+
+if(!drawer){
+return
+}
+
+drawer.classList.add("hidden")
+drawer.classList.remove("flex")
+
+}
+
+
+function refreshVisitors(){
+
+loadVisitors(currentVisitorSort)
+
+}
+
+
+function updateVisitorSortButtons(){
+
+const nameButton = document.getElementById("visitor-sort-name")
+const phoneButton = document.getElementById("visitor-sort-phone")
+const rfidButton = document.getElementById("visitor-sort-rfid")
+
+if(nameButton){
+nameButton.classList.toggle("student-filter-active", currentVisitorSort === "name")
+}
+
+if(phoneButton){
+phoneButton.classList.toggle("student-filter-active", currentVisitorSort === "phone")
+}
+
+if(rfidButton){
+rfidButton.classList.toggle("student-filter-active", currentVisitorSort === "rfid")
+}
+
+}
+
+
+function loadVisitors(sortMode=currentVisitorSort){
+
+const visitorList = document.getElementById("visitor-list")
+
+if(!visitorList){
+return
+}
+
+currentVisitorSort = sortMode
+updateVisitorSortButtons()
+
+fetch(`/visitors?sort=${encodeURIComponent(currentVisitorSort)}`)
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.length){
+visitorList.innerHTML = `
+<div class="student-empty-state">
+<p class="student-empty-title">No visitors registered yet</p>
+<p class="helper-text">Visitors you add will appear here with their phone number, purpose, and RFID assignment.</p>
+</div>
+`
+return
+}
+
+visitorList.innerHTML = data.map(visitor=>`
+<article class="student-card">
+<div class="student-card-copy">
+<div class="student-card-topline">
+<p class="student-card-name">${visitor.name}</p>
+<span class="student-chip">${visitor.phone}</span>
+</div>
+<p class="student-card-meta">Purpose: ${escapeHtml(visitor.purpose || "Not provided")}</p>
+<p class="student-card-meta">RFID: ${visitor.rfid_tag || "Not assigned yet"}</p>
+</div>
+<button class="btn btn-danger-soft student-delete-btn" onclick="openDeleteVisitorModal('${visitor.id}','${escapeHtml(visitor.name)}')">Delete</button>
+</article>
+`).join("")
+
+})
+
+}
+
+
+function openDeleteVisitorModal(visitorId, visitorName){
+
+const modal = document.getElementById("delete-visitor-modal")
+const message = document.getElementById("delete-visitor-message")
+
+if(!modal || !message){
+return
+}
+
+pendingVisitorDelete = visitorId
+message.textContent = `Delete ${visitorName}? This will remove the visitor record and free the RFID for another person.`
+modal.classList.remove("hidden")
+modal.classList.add("flex")
+
+}
+
+
+function closeDeleteVisitorModal(){
+
+const modal = document.getElementById("delete-visitor-modal")
+
+if(!modal){
+return
+}
+
+pendingVisitorDelete = null
+modal.classList.add("hidden")
+modal.classList.remove("flex")
+
+}
+
+
+function confirmDeleteVisitor(){
+
+if(!pendingVisitorDelete){
+return
+}
+
+fetch(`/delete_visitor/${pendingVisitorDelete}`,{
+method:"POST"
+})
+.then(async res=>({
+ok:res.ok,
+data:await res.json()
+}))
+.then(result=>{
+showToast(result.data.message,result.ok ? "success" : "error")
+
+if(!result.ok){
+return
+}
+
+closeDeleteVisitorModal()
+loadVisitors(currentVisitorSort)
+})
+
+}
+
+
 function escapeHtml(value){
 
 return String(value)
@@ -241,6 +403,13 @@ return String(value)
 
 function registerVisitor(){
 
+const phoneInput = document.getElementById("phone")
+const phoneNumber = phoneInput ? phoneInput.value.replace(/\D/g,"").slice(0,10) : ""
+
+if(phoneInput){
+phoneInput.value = phoneNumber
+}
+
 fetch("/register_visitor",{
 
 method:"POST",
@@ -252,21 +421,33 @@ headers:{
 body:JSON.stringify({
 
 name:document.getElementById("vname").value,
-phone:document.getElementById("phone").value,
+phone:phoneNumber,
 purpose:document.getElementById("purpose").value,
 rfid_tag:document.getElementById("vrfid").value
 
 })
 
 })
-.then(res=>res.json())
-.then(data=>{
-showToast(data.message,"success")
+.then(async res=>({
+ok:res.ok,
+data:await res.json()
+}))
+.then(result=>{
+const smsMessage = result.data.sms_message ? ` ${result.data.sms_message}` : ""
+showToast(`${result.data.message}.${smsMessage}`.trim(),result.ok ? "success" : "error")
+
+if(!result.ok){
+return
+}
 
 document.getElementById("vname").value=""
 document.getElementById("phone").value=""
 document.getElementById("purpose").value=""
 document.getElementById("vrfid").value=""
+
+if(document.getElementById("visitor-list")){
+loadVisitors(currentVisitorSort)
+}
 
 })
 
@@ -327,7 +508,7 @@ customLocationInput.value=""
 }
 
 toggleCustomLocation()
-loadLogs()
+loadLatestLog()
 })
 
 }
@@ -392,7 +573,7 @@ lastScan.textContent = `Last hardware scan: ${data.last_tag || "-"} at ${data.la
 
 if(scanSignature !== lastHardwareScanSignature){
 lastHardwareScanSignature = scanSignature
-loadLogs()
+loadLatestLog()
 }
 }else{
 lastScan.textContent = "No hardware scans received yet."
@@ -489,12 +670,42 @@ function loadLogs(){
 fetch("/logs")
 .then(res=>res.json())
 .then(data=>{
+renderLogs(data)
 
-let table = document.getElementById("logs")
+})
 
-table.innerHTML=""
+}
 
-data.forEach(log=>{
+
+function loadLatestLog(){
+
+fetch("/logs")
+.then(res=>res.json())
+.then(data=>{
+
+const recentLogs = data.filter(log=>{
+const timeIn = log.time_in || log.timestamp || ""
+return isRecentLog(timeIn)
+})
+
+renderLogs(recentLogs.length ? [recentLogs[0]] : [])
+
+})
+
+}
+
+
+function renderLogs(logs){
+
+const table = document.getElementById("logs")
+
+if(!table){
+return
+}
+
+table.innerHTML = ""
+
+logs.forEach(log=>{
 
 const timeIn = log.time_in || log.timestamp || ""
 const timeOut = log.time_out || "-"
@@ -514,8 +725,6 @@ let row = `
 `
 
 table.innerHTML += row
-
-})
 
 })
 
@@ -576,6 +785,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 const locationSelect = document.getElementById("scanner-location")
 const clearLogsModal = document.getElementById("clear-logs-modal")
 const deleteStudentModal = document.getElementById("delete-student-modal")
+const deleteVisitorModal = document.getElementById("delete-visitor-modal")
+const phoneInput = document.getElementById("phone")
 
 if(locationSelect){
 locationSelect.addEventListener("change",toggleCustomLocation)
@@ -598,8 +809,18 @@ closeDeleteStudentModal()
 })
 }
 
-if(document.getElementById("logs")){
-loadLogs()
+if(deleteVisitorModal){
+deleteVisitorModal.addEventListener("click",(event)=>{
+if(event.target === deleteVisitorModal){
+closeDeleteVisitorModal()
+}
+})
+}
+
+if(phoneInput){
+phoneInput.addEventListener("input",()=>{
+phoneInput.value = phoneInput.value.replace(/\D/g,"").slice(0,10)
+})
 }
 
 if(document.getElementById("arduino-status-panel")){
